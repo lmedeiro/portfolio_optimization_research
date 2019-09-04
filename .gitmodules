@@ -1,0 +1,6 @@
+[submodule "BackTestingSystem"]
+	path = BackTestingSystem
+	url = ./BackTestingSystem/
+[submodule "pyRMT"]
+	path = pyRMT
+	url = ./pyRMT/
