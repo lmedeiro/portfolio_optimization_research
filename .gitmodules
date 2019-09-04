@@ -1,6 +1,6 @@
 [submodule "BackTestingSystem"]
 	path = BackTestingSystem
-	url = ./BackTestingSystem/
+	url = git@github.com:lmedeiro/bt.git
 [submodule "pyRMT"]
 	path = pyRMT
-	url = ./pyRMT/
+	url = git@github.com:lmedeiro/pyRMT.git
