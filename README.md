@@ -1,10 +1,21 @@
-# Portfolio Optimization Research
+<h1> Repo Description </h1>
 
-This repo pertains to the work developed for a portfolio optimization 
-research. Work here is divided in different submodules that were 
-pulled from the respective github sources. In addition, updates 
-to the submodules were performed. 
+<p>
+    This repo pertains to the work developed for a portfolio optimization 
+    research project at Aalto University. Main author is Luiz Fernando Medeiros, in collaboration with Professor
+    Esa Ollila. Further description about the work may be found on the 
+    Jupyter Notebook  
+    <a href="https://github.com/lmedeiro/portfolio_optimization_research/blob/master/experiment_and_results.ipynb">
+    containing the experiments and notes.</a>  
+</p>
 
-Diferent Jupyter notebooks contain the work developed. In addition, 
-StrategyResources.py contain helper classes and functions that aid 
-in the building the tests for analysis. 
+
+<h1> Research Abstract </h1>
+<p>
+    This work evaluates the performance of different estimators in the domain of Portfolio Optimization. 
+    Three different estimators, namely sample based, Ledoit-Wolf (LWE), 
+    and Rotationally Invariant Estimator (RIE) are evaluated on their 
+    ability to approximate Covariance matrices, 
+    as well as how these Covariance matrix approximation 
+    affect the portfolio optimization process.
+</p>
