@@ -15,7 +15,8 @@ cw = os.getcwd()
 # print(cw)
 global OPTIMUM_CONTAINER
 OPTIMUM_CONTAINER = {'date': [], 'value': []}
-ACCEPTED_STRATEGIES = ['gmvp', 'mdp_kappa', 'mdp_D', 'one_over_n']
+ACCEPTED_STRATEGIES = ['gmvp','mdp_original',
+                       'mdp_kappa', 'mdp_D', 'one_over_n']
 
 if 'portfolio_research_project' in cw:
     home_dir = os.path.expandvars("$HOME")
@@ -67,31 +68,6 @@ def calculate_gmvp(sigma):
     return x.value, optimum
 
 
-def calculate_mdp_old(sigma, min_gmvp_point=0.03):
-    """
-    Maximum Diversified Portfolio
-    :param sigma: covariance matrix
-    :param min_gmvp_point: paramter that stipulates what is the minimum gmpv point at which
-    to place as constraint in the QCP
-    :return: Diversification ratio
-    """
-    N = sigma.shape[0]
-    # bp()
-    volatilities = np.sqrt(np.diag(sigma))
-    volatilities = volatilities.reshape(volatilities.shape[0], 1)
-    x = cp.Variable(shape=(N,1))
-    D = x.T @ volatilities # cp.quad_form(x, sigma)
-    constraints = [x >= np.ones([N,1]) * 0,
-                   np.ones([N,1]).T @ x == 1,
-                   cp.quad_form(x, sigma) <= min_gmvp_point,
-                  ]
-    problem = cp.Problem(cp.Maximize(D),
-                         constraints)
-    optimum = problem.solve(qcp=True)
-    D = D.value / np.sqrt(x.T @ sigma @ x)
-    return x.value, D
-
-
 def calculate_one_over_n(sigma):
     N = sigma.shape[0]
     volatilities = np.sqrt(np.diag(sigma))
@@ -100,6 +76,23 @@ def calculate_one_over_n(sigma):
     V_N = w_N.T @ volatilities
     D = V_N / np.sqrt(w_N.T @ sigma @ w_N)
     return w_N, D
+
+
+def calculate_mdp_original(sigma):
+    """
+    Maximum Diversified Portfolio, proposed in Fall 2008, without parameters
+    :param sigma: covariance matrix
+    :return: weight matrix M, diversification ratio D
+    """
+    N = sigma.shape[0]
+    # bp()
+    volatilities = np.sqrt(np.diag(sigma))
+    A = np.linalg.lstsq(sigma, volatilities, rcond=None)[0]
+    B = np.ones([N, 1]).T @ A
+    M = A / B
+    M = M.reshape([N, 1])
+    D = (M.T @ volatilities) / np.sqrt(M.T @ sigma @ M)
+    return M, D
 
 
 def calculate_mdp_based_on_kappa(sigma):
@@ -264,6 +257,8 @@ class WeighOptimization(bt.Algo):
             sigma = calculate_Sigma(returns, method_name=self.covar_method)
             if self.optimization_method == 'gmvp':
                 raw_weights, optimum = calculate_gmvp(sigma)
+            elif self.optimization_method == 'mdp_original':
+                raw_weights, optimum = calculate_mdp_original(sigma)
             elif self.optimization_method == 'mdp_kappa':
                 raw_weights, optimum = calculate_mdp_based_on_kappa(sigma)
             elif self.optimization_method == 'mdp_D':
@@ -461,6 +456,7 @@ def get_sorted_optimum_data(test_container):
             sorted_df.loc[row_index, 'test_name'] = test.name
             row_index += len(test_container)
     return sorted_df
+
 
 def show_optimum_plot(sorted_df, test_container):
     plt.figure(figsize=(30, 10))
