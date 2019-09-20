@@ -425,7 +425,8 @@ def value_return_plot(result):
 
 
 def show_results(result, covariance_methods, test_container, show_return_graph=True,
-                 show_value_added_graph=True, show_optimum_graph=True):
+                 show_value_added_graph=True, show_optimum_graph=True,
+                 show_optimum_vs_period_graph=False):
     # bp()
     plt.figure()
     result.plot(figsize=(15, 10), logy=True)
@@ -438,6 +439,9 @@ def show_results(result, covariance_methods, test_container, show_return_graph=T
     if show_optimum_graph:
         sorted_df = get_sorted_optimum_data(test_container)
         show_optimum_plot(sorted_df, test_container)
+    if show_optimum_vs_period_graph:
+        sorted_df = get_sorted_optimum_data(test_container)
+        show_optimum_vs_period_plot(sorted_df, test_container)
     return 0
 
 
@@ -464,16 +468,55 @@ def show_optimum_plot(sorted_df, test_container):
     title_fontsize = 25
     plt.xticks(fontsize=axis_fontsize)
     plt.yticks(fontsize=axis_fontsize)
-    plt.xlabel('Dates', fontsize=axis_fontsize)
+    plt.xlabel('Month Index', fontsize=axis_fontsize)
     plt.ylabel('Optimum', fontsize=axis_fontsize)
-    plt.ylim(sorted_df['value'].min(), sorted_df['value'].max())
-    plt.title('Optimum vs Date', fontsize=title_fontsize)
+    plt.title('Optimum vs Month Index', fontsize=title_fontsize)
+    alpha = 0.75
     for test in test_container:
-        plt.plot(sorted_df[sorted_df['test_name'] == test.name]['date'].values,
-                    sorted_df[sorted_df['test_name'] == test.name]['value'].values,
-                    label=test.name)
+        data = sorted_df[sorted_df['test_name'] == test.name].sort_values(by='date')
+        t = data['date'].values.ravel()
+        x = data['value'].values.ravel()
+        # x = np.hstack(x)[0]
+        plt.bar(np.arange(len(t)), x, alpha=alpha,
+                label=test.name,
+                )
     plt.legend(fontsize=axis_fontsize)
     plt.show()
+
+
+def show_optimum_vs_period_plot(sorted_df, test_container):
+    mean_optima_df = pd.DataFrame(columns=['test_name', 'values'])
+    plt.figure(figsize=(30, 10))
+    axis_fontsize = 20
+    title_fontsize = 25
+    plt.xticks(fontsize=axis_fontsize)
+    plt.yticks(fontsize=axis_fontsize)
+    for test in test_container:
+        data = sorted_df[sorted_df['test_name'] == test.name].sort_values(by='date')
+        # t = data['date'].values.ravel()
+        x = data['value'].values.ravel()
+        # x = np.hstack(x)[0]
+        # bp()
+        plt.hist(x, bins=50, density=True, label=test.name, alpha=0.50)
+        mean_optima_df.loc[mean_optima_df.index.size] = [test.name, np.mean(x)]
+
+    # bp()
+    plt.legend()
+    plt.show()
+    plt.figure(figsize=(30, 10))
+    axis_fontsize = 20
+    title_fontsize = 25
+    plt.xticks(rotation='vertical', fontsize=axis_fontsize)
+    plt.yticks(fontsize=axis_fontsize)
+    plt.grid()
+    plt.xlabel('Test Name', fontsize=axis_fontsize)
+    plt.ylabel('Average Optimum', fontsize=axis_fontsize)
+    plt.title('Average Optimum vs Test Name', fontsize=title_fontsize)
+
+    plt.plot(mean_optima_df['test_name'].values, mean_optima_df['values'].values, '-o')
+    # plt.legend(fontsize=axis_fontsize)
+    plt.show()
+
 
 if __name__ == "__main__":
     print('working')
