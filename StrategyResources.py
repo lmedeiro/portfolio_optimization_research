@@ -342,6 +342,7 @@ def build_test(number_of_assets, data_container,
         if data is not None:
             del data
         data = data_container[data_container.columns[:asset_count]]
+        # bp()
         print("final number of observations: {}".format(data.index.size))
         for method_name in covariance_methods:
             for strategy in weight_strategy_names:
@@ -436,11 +437,11 @@ def show_results(result, covariance_methods, test_container, show_return_graph=T
         value_return_plot(result)
     if show_value_added_graph:
         value_added_plot(result, covariance_methods)
-    if show_optimum_graph:
+    if show_optimum_graph or show_optimum_vs_period_graph:
         sorted_df = get_sorted_optimum_data(test_container)
+    if show_optimum_graph:
         show_optimum_plot(sorted_df, test_container)
     if show_optimum_vs_period_graph:
-        sorted_df = get_sorted_optimum_data(test_container)
         show_optimum_vs_period_plot(sorted_df, test_container)
     return 0
 
