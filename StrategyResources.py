@@ -19,14 +19,20 @@ OPTIMUM_CONTAINER = {'date': [], 'value': []}
 ACCEPTED_STRATEGIES = ['gmvp','mdp_original',
                        'mdp_kappa', 'mdp_D', 'one_over_n']
 
-if 'portfolio_research_project' in cw:
-    home_dir = os.path.expandvars("$HOME")
-    app_src_dir = '/dev/repos/FinancialAnalyticsSystem/src/PortfolioManagementSystem/portfolio_research_project'
-    sys.path.insert(0, home_dir + app_src_dir)
-    from BackTestingSystem import bt
-else:
-   from src.PortfolioManagementSystem.portfolio_research_project.BackTestingSystem import bt
+home_dir = os.path.expandvars("$HOME")                                                                        
+app_src_dir = '/dev/repos/classes/portfolio_research_project/BackTestingSystem'                               
+sys.path.insert(0, home_dir + app_src_dir)                                                                    
+print(home_dir + app_src_dir)  
 
+# if 'portfolio_research_project' in cw:
+#     home_dir = os.path.expandvars("$HOME")
+#     app_src_dir = '/dev/repos/FinancialAnalyticsSystem/src/PortfolioManagementSystem/portfolio_research_project'
+#     sys.path.insert(0, home_dir + app_src_dir)
+#     from BackTestingSystem import bt
+# else:
+#    from src.PortfolioManagementSystem.portfolio_research_project.BackTestingSystem import bt
+
+from BackTestingSystem import bt
 
 def calculate_Sigma(X, method_name='sample'):
     sigma = None
