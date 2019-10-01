@@ -41,8 +41,9 @@ weight_strategy_names = ['gmvp']
 
 covariance_methods = ['ledoit-wolf']
 number_of_assets = [150]
-lookback_periods=[pd.DateOffset(months=1), pd.DateOffset(months=3), pd.DateOffset(months=6),
-                  pd.DateOffset(months=9), pd.DateOffset(months=12),
+lookback_periods=[pd.DateOffset(days=1), pd.DateOffset(days=10), pd.DateOffset(days=20),
+                  pd.DateOffset(days=30), pd.DateOffset(days=60),pd.DateOffset(days=100),
+		  pd.DateOffset(days=180), pd.DateOffset(days=200),
                  ]
 lag_times = [pd.DateOffset(months=0)]
 # q is quantity (number of shares)
