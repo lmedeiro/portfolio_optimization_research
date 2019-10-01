@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 
 import numpy as np
 import pandas as pd
@@ -406,6 +407,8 @@ def value_added_plot(result, covariance_methods):
     plt.title('Added Value vs Test Name', fontsize=title_fontsize)
     plt.grid()
     plt.bar(result.stats.loc['total_return'].index.values, value_added)
+    result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
+    plt.savefig(fname='value_added_plot' + result_time + '.pdf', format='pdf', dpi=300)
     plt.show()
     return 0
 
@@ -421,6 +424,8 @@ def value_return_plot(result):
     plt.title('Return vs Test Name', fontsize=title_fontsize)
     plt.grid()
     plt.bar(result.stats.loc['total_return'].index.values, result.stats.loc['total_return'])
+    result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
+    plt.savefig(fname='value_return_plot' + result_time + '.pdf', format='pdf', dpi=300)
     plt.show()
     return 0
 
@@ -431,8 +436,9 @@ def show_results(result, covariance_methods, test_container, show_return_graph=T
     # bp()
     plt.figure()
     result.plot(figsize=(15, 10), logy=True)
-    # print(result.stats.loc[['total_return', 'max_drawdown',
-    #                        'daily_sharpe','worst_year', 'win_year_perc']])
+    result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
+    plt.savefig(fname='equity_result_plot' + result_time + '.pdf', format='pdf', dpi=300)
+
     if show_return_graph:
         value_return_plot(result)
     if show_value_added_graph:
@@ -482,6 +488,8 @@ def show_optimum_plot(sorted_df, test_container):
                 label=test.name,
                 )
     plt.legend(fontsize=axis_fontsize)
+    result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
+    plt.savefig(fname='optimum_plot' + result_time + '.pdf', format='pdf', dpi=300)
     plt.show()
 
 
@@ -516,6 +524,8 @@ def show_optimum_vs_period_plot(sorted_df, test_container):
 
     plt.plot(mean_optima_df['test_name'].values, mean_optima_df['values'].values, '-o')
     # plt.legend(fontsize=axis_fontsize)
+    result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
+    plt.savefig(fname='optimum_vs_period_plot' + result_time + '.pdf', format='pdf', dpi=300)
     plt.show()
 
 
