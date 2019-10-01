@@ -39,11 +39,9 @@ table_names = data.columns
 # GMVP Testing:
 weight_strategy_names = ['gmvp']
 
-covariance_methods = ['ledoit-wolf']
-number_of_assets = [150]
-lookback_periods=[pd.DateOffset(months=1), pd.DateOffset(months=3), pd.DateOffset(months=6),
-                  pd.DateOffset(months=9), pd.DateOffset(months=12),
-                 ]
+covariance_methods = ['sample', 'ledoit-wolf', 'RIE']
+number_of_assets = [10, 50 , 100, 150, 200]
+lookback_periods=[pd.DateOffset(months=6)]
 lag_times = [pd.DateOffset(months=0)]
 # q is quantity (number of shares)
 # p is price
@@ -60,7 +58,7 @@ strategy_container, test_container = strat_res.build_test(number_of_assets,
                 add_random_strategy=False, add_one_over_n_strategy=False,)
 result = bt.run(*test_container)
 strat_res.show_results(result, covariance_methods, test_container, show_return_graph=True,
-                       show_value_added_graph=False,
+                       show_value_added_graph=True,
                        show_optimum_graph=True,
-                      show_optimum_vs_period_graph=True)
+                       show_optimum_vs_period_graph=False)
 
