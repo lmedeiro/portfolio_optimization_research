@@ -489,10 +489,13 @@ def show_optimum_plot(sorted_df, test_container):
         data = sorted_df[sorted_df['test_name'] == test.name].sort_values(by='date')
         t = data['date'].values.ravel()
         x = data['value'].values.ravel()
-        # x = np.hstack(x)[0]
-        plt.bar(np.arange(len(t)), x, alpha=alpha,
-                label=test.name,
-                )
+        d = 0
+        for d in x[0].shape:
+            d += 1
+        if d > 1:
+            x = np.hstack(x)[0]
+        plt.bar(np.arange(len(t)), x, alpha=alpha,label=test.name,)
+    # bp()
     plt.legend(fontsize=axis_fontsize)
     result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
     plt.savefig(fname='optimum_plot' + result_time + '.pdf', format='pdf', dpi=300)
@@ -510,8 +513,11 @@ def show_optimum_vs_period_plot(sorted_df, test_container):
         data = sorted_df[sorted_df['test_name'] == test.name].sort_values(by='date')
         # t = data['date'].values.ravel()
         x = data['value'].values.ravel()
-        # x = np.hstack(x)[0]
-        # bp()
+        d = 0
+        for d in x[0].shape:
+            d += 1
+        if d > 1:
+            x = np.hstack(x)[0]
         plt.hist(x, bins=50, density=True, label=test.name, alpha=0.50)
         mean_optima_df.loc[mean_optima_df.index.size] = [test.name, np.mean(x)]
 

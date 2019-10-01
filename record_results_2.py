@@ -36,9 +36,9 @@ data = pd.read_pickle('data.pckl')
 table_names = data.columns
 
 
-weight_strategy_names = ['mdp_original', 'mdp_D', 'one_over_n']
+weight_strategy_names = ['mdp_D', ]
 
-covariance_methods = ['ledoit-wolf']
+covariance_methods = ['sample','ledoit-wolf', 'RIE']
 number_of_assets = [10, 50, 100, 150, 200]
 lookback_periods=[pd.DateOffset(months=6)]
 lag_times = [pd.DateOffset(months=0)]
@@ -64,7 +64,7 @@ if result:
     del result
 result = bt.run(*test_container)
 strat_res.show_results(result, covariance_methods, test_container, show_return_graph=True,
-                       show_value_added_graph=False,
+                       show_value_added_graph=True,
                        show_optimum_graph=True,
-                       show_optimum_vs_period_graph=False)
+                       show_optimum_vs_period_graph=True)
 
