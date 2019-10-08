@@ -356,8 +356,10 @@ def build_test(number_of_assets, data_container,
                 for commission_func in commission_functions:
                     for lookback in lookback_periods:
                         for lag in lag_times:
+                            lookback_string = str(lookback)
+                            lookback_string = str.split(lookback_string)[1] # Assume the space, and separation by space. 
                             strategy_container.append(
-                                bt.Strategy(method_name + '_' + strategy + str(lookback) + '_' + str(asset_count),
+                                bt.Strategy(method_name + '_' + strategy + lookback_string + '_' + str(asset_count),
                                             [
                                                 bt.algos.RunMonthly(),
                                                 bt.algos.SelectAll(),
