@@ -36,7 +36,7 @@ data = pd.read_pickle('data.pckl')
 table_names = data.columns
 
 
-weight_strategy_names = ['mdp_D', ]
+weight_strategy_names = ['gmvp',] 
 
 covariance_methods = ['sample','ledoit-wolf', 'RIE']
 number_of_assets = [10, 50, 100, 150, 200]
