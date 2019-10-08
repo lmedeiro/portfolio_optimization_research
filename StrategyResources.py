@@ -357,9 +357,14 @@ def build_test(number_of_assets, data_container,
                     for lookback in lookback_periods:
                         for lag in lag_times:
                             lookback_string = str(lookback)
-                            lookback_string = str.split(lookback_string)[1] # Assume the space, and separation by space. 
+                            lookback_string = str.split(lookback_string)[1] # Assume the space, and separation by space.
+                            lookback_string = str.replace(lookback_string, '<', '')
+                            lookback_string = str.replace(lookback_string, '>', '')
                             strategy_container.append(
-                                bt.Strategy(method_name + '_' + strategy + lookback_string + '_' + str(asset_count),
+                                bt.Strategy(method_name + '\n'
+                                            + strategy + '\n'
+                                            + lookback_string + '\n'
+                                            + str(asset_count),
                                             [
                                                 bt.algos.RunMonthly(),
                                                 bt.algos.SelectAll(),
@@ -408,7 +413,7 @@ def value_added_plot(result, covariance_methods):
     plt.figure(figsize=(15, 5))
     axis_fontsize = 15
     title_fontsize = 20
-    plt.xticks(rotation='vertical', fontsize=axis_fontsize)
+    plt.xticks(rotation='horizontal', fontsize=axis_fontsize)
     plt.yticks(fontsize=axis_fontsize)
     plt.xlabel('Test Name', fontsize=axis_fontsize)
     plt.ylabel('Value Added', fontsize=axis_fontsize)
@@ -425,7 +430,7 @@ def value_return_plot(result):
     plt.figure(figsize=(15, 5))
     axis_fontsize = 15
     title_fontsize = 20
-    plt.xticks(rotation='vertical', fontsize=axis_fontsize)
+    plt.xticks(rotation='horizontal', fontsize=axis_fontsize)
     plt.yticks(fontsize=axis_fontsize)
     plt.xlabel('Test Name', fontsize=axis_fontsize)
     plt.ylabel('Return value', fontsize=axis_fontsize)
@@ -529,7 +534,7 @@ def show_optimum_vs_period_plot(sorted_df, test_container):
     plt.figure(figsize=(30, 10))
     axis_fontsize = 20
     title_fontsize = 25
-    plt.xticks(rotation='vertical', fontsize=axis_fontsize)
+    plt.xticks(rotation='horizontal', fontsize=axis_fontsize)
     plt.yticks(fontsize=axis_fontsize)
     plt.grid()
     plt.xlabel('Test Name', fontsize=axis_fontsize)

@@ -43,8 +43,8 @@ covariance_methods = ['ledoit-wolf']
 number_of_assets = [150]
 lookback_periods=[pd.DateOffset(days=1), pd.DateOffset(days=10), pd.DateOffset(days=20),
                   pd.DateOffset(days=30), pd.DateOffset(days=60),pd.DateOffset(days=100),
-		  pd.DateOffset(days=180), pd.DateOffset(days=200),
-                 ]
+                  pd.DateOffset(days=180), pd.DateOffset(days=200),
+                  ]
 lag_times = [pd.DateOffset(months=0)]
 # q is quantity (number of shares)
 # p is price
@@ -63,5 +63,5 @@ result = bt.run(*test_container)
 strat_res.show_results(result, covariance_methods, test_container, show_return_graph=True,
                        show_value_added_graph=False,
                        show_optimum_graph=True,
-                      show_optimum_vs_period_graph=True)
+                       show_optimum_vs_period_graph=True)
 
