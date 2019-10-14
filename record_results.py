@@ -37,7 +37,7 @@ table_names = data.columns
 
 
 # GMVP Testing:
-weight_strategy_names = ['mdp_D']
+weight_strategy_names = ['one_over_n']
 
 covariance_methods = ['ledoit-wolf']
 number_of_assets = [150]

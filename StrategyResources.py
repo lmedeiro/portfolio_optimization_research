@@ -1,6 +1,7 @@
 import sys
 import os
 import time
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -460,6 +461,8 @@ def show_results(result, covariance_methods, test_container, show_return_graph=T
                 format='pdf', 
                 dpi=300,
                 bbox_inches='tight')
+    pickle.dump(result, 
+                open('data/result_' + result_time + '.pckl', 'wb'))
 
     if show_return_graph:
         value_return_plot(result)
@@ -559,6 +562,7 @@ def show_optimum_vs_period_plot(sorted_df, test_container):
                 format='pdf', 
                 dpi=300, bbox_inches='tight')
     plt.show()
+    mean_optima_df.to_pickle('data/' + 'mean_optima_df' + '_' + result_time + '.pckl')
 
 
 if __name__ == "__main__":
