@@ -346,10 +346,11 @@ def build_test(number_of_assets, data_container,
     test_container = []
     j = 0
     data = None
+    total_assets = len(data_container.columns)
     for asset_count in number_of_assets:
         if data is not None:
             del data
-        data = data_container[data_container.columns[:asset_count]]
+        data = data_container[data_container.columns[np.random.randint(0, total_assets, asset_count)]]
         # bp()
         # label_dictionary = {"method_name": method_name + '_',
         #                     "strategy": strategy + '_',
@@ -405,7 +406,7 @@ def build_test(number_of_assets, data_container,
     return strategy_container, test_container
 
 
-def value_added_plot(result, covariance_methods, indexes_to_show):
+def value_added_plot(result, covariance_methods, indexes_to_show, test_start_time):
     value_added = []
     number_of_covar_methods = len(covariance_methods)
     index = 0
@@ -419,7 +420,7 @@ def value_added_plot(result, covariance_methods, indexes_to_show):
     plt.figure(figsize=(15, 5))
     axis_fontsize = 15
     title_fontsize = 20
-    plt.xticks(rotation=0, fontsize=axis_fontsize)
+    plt.xticks(rotation=45, fontsize=axis_fontsize)
     plt.yticks(fontsize=axis_fontsize)
     plt.xlabel('Test Name', fontsize=axis_fontsize)
     plt.ylabel('Value Added', fontsize=axis_fontsize)
@@ -428,7 +429,7 @@ def value_added_plot(result, covariance_methods, indexes_to_show):
     index_names = process_plot_label_strings(indexes=indexes_to_show,
                                              string_container=result.stats.loc['total_return'].index.values)
     plt.bar(index_names, value_added)
-    result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
+    result_time = test_start_time
     plt.savefig(fname='images/value_added_plot' + result_time + '.pdf', 
                 format='pdf', 
                 dpi=300,
@@ -449,11 +450,11 @@ def process_plot_label_strings(indexes, string_container):
     return new_strings
 
 
-def value_return_plot(result, indexes_to_show):
+def value_return_plot(result, indexes_to_show, test_start_time):
     plt.figure(figsize=(15, 5))
     axis_fontsize = 15
     title_fontsize = 20
-    plt.xticks(rotation=0, fontsize=axis_fontsize)
+    plt.xticks(rotation=45, fontsize=axis_fontsize)
     plt.yticks(fontsize=axis_fontsize)
     plt.xlabel('Test Name', fontsize=axis_fontsize)
     plt.ylabel('Return value', fontsize=axis_fontsize)
@@ -462,7 +463,7 @@ def value_return_plot(result, indexes_to_show):
     index_names = process_plot_label_strings(indexes=indexes_to_show,
                                              string_container=result.stats.loc['total_return'].index.values)
     plt.bar(index_names, result.stats.loc['total_return'])
-    result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
+    result_time = test_start_time
     plt.savefig(fname='images/value_return_plot' + result_time + '.pdf', 
                 format='pdf', 
                 dpi=300,
@@ -473,7 +474,8 @@ def value_return_plot(result, indexes_to_show):
 
 def show_results(result, covariance_methods, test_container, show_return_graph=True,
                  show_value_added_graph=True, show_optimum_graph=True,
-                 show_optimum_vs_period_graph=False, save_plots=True, indexes_to_show=None):
+                 show_optimum_vs_period_graph=False, save_plots=True, indexes_to_show=None,
+                 test_start_time=time.strftime('%Y-%m-%d-%H-%M-%S')):
     if indexes_to_show is None:
         indexes_to_show = {'value_added': [0, 3],
                            'equity_progression': [0, 3],
@@ -493,7 +495,7 @@ def show_results(result, covariance_methods, test_container, show_return_graph=T
     plt.xlabel('Dates', fontsize=axis_fontsize)
     plt.ylabel('Percentage Returns', fontsize=axis_fontsize)
     plt.title('Equity Progression', fontsize=title_fontsize)
-    result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
+    result_time = test_start_time
     if save_plots:
         plt.savefig(fname='images/equity_result_plot' + result_time + '.pdf',
                     format='pdf',
@@ -505,15 +507,15 @@ def show_results(result, covariance_methods, test_container, show_return_graph=T
         plt.show()
     # bp()
     if show_return_graph:
-        value_return_plot(result, indexes_to_show['return_graph'])
+        value_return_plot(result, indexes_to_show['return_graph'], test_start_time)
     if show_value_added_graph:
-        value_added_plot(result, covariance_methods, indexes_to_show['value_added'])
+        value_added_plot(result, covariance_methods, indexes_to_show['value_added'], test_start_time)
     if show_optimum_graph or show_optimum_vs_period_graph:
         sorted_df = get_sorted_optimum_data(test_container, indexes_to_show['optimum_graph'])
     if show_optimum_graph:
-        show_optimum_plot(sorted_df, test_container)
+        show_optimum_plot(sorted_df, test_container, test_start_time)
     if show_optimum_vs_period_graph:
-        show_optimum_vs_period_plot(sorted_df, test_container)
+        show_optimum_vs_period_plot(sorted_df, test_container, test_start_time)
     return 0
 
 
@@ -537,7 +539,7 @@ def get_sorted_optimum_data(test_container, indexes_to_show):
     return sorted_df
 
 
-def show_optimum_plot(sorted_df, test_container):
+def show_optimum_plot(sorted_df, test_container, test_start_time):
     plt.figure(figsize=(30, 10))
     axis_fontsize = 20
     title_fontsize = 25
@@ -561,14 +563,14 @@ def show_optimum_plot(sorted_df, test_container):
                 label=sorted_df[sorted_df['test_name'] == test.name]['short_test_name'].values[0],)
     # bp()
     plt.legend(fontsize=axis_fontsize)
-    result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
+    result_time = test_start_time
     plt.savefig(fname='images/optimum_plot' + result_time + '.pdf',
                 format='pdf', 
                 dpi=300, bbox_inches='tight')
     plt.show()
 
 
-def show_optimum_vs_period_plot(sorted_df, test_container):
+def show_optimum_vs_period_plot(sorted_df, test_container, test_start_time):
     mean_optima_df = pd.DataFrame(columns=['test_name', 'short_test_name', 'values'])
     # plt.figure(figsize=(30, 10))
     axis_fontsize = 20
@@ -597,7 +599,7 @@ def show_optimum_vs_period_plot(sorted_df, test_container):
     plt.figure(figsize=(30, 10))
     axis_fontsize = 20
     title_fontsize = 25
-    plt.xticks(rotation=0, fontsize=axis_fontsize)
+    plt.xticks(rotation=45, fontsize=axis_fontsize)
     plt.yticks(fontsize=axis_fontsize)
     plt.grid()
     plt.xlabel('Test Name', fontsize=axis_fontsize)
@@ -606,7 +608,7 @@ def show_optimum_vs_period_plot(sorted_df, test_container):
     # bp()
     plt.boxplot(mean_optima_df['values'].values, vert=True, patch_artist=True, notch=True,
                 labels=mean_optima_df['short_test_name'].values)
-    result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
+    result_time = test_start_time
     plt.savefig(fname='images/optimum_vs_period_plot' + result_time + '.pdf', 
                 format='pdf', 
                 dpi=300, bbox_inches='tight')

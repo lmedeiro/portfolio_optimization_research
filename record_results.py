@@ -2,7 +2,7 @@ import pandas as pd
 import sys
 import os
 import argparse
-
+import time
 from pdb import set_trace as bp
 
 # home_dir = os.path.expandvars("$HOME")
@@ -43,7 +43,7 @@ def main(args):
     strategy_container = None
     result = None
 
-
+    test_start_time = time.strftime('%Y-%m-%d-%H-%M-%S')
     data = pd.read_pickle('data.pckl')
     table_names = data.columns
     # bp()
@@ -126,7 +126,8 @@ def main(args):
                            show_optimum_graph=show_optimum_graph,
                            show_optimum_vs_period_graph=show_optimum_vs_period_graph,
                            save_plots=save_plots,
-                           indexes_to_show=indexes_to_show)
+                           indexes_to_show=indexes_to_show,
+                           test_start_time=test_start_time)
 
 
 # Entry point of the script
