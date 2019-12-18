@@ -347,10 +347,11 @@ def build_test(number_of_assets, data_container,
     j = 0
     data = None
     total_assets = len(data_container.columns)
+    permutation = np.random.permutation(range(0, total_assets))
     for asset_count in number_of_assets:
         if data is not None:
             del data
-        data = data_container[data_container.columns[np.random.randint(0, total_assets, asset_count)]]
+        data = data_container[data_container.columns[permutation[:asset_count]]]
         # bp()
         # label_dictionary = {"method_name": method_name + '_',
         #                     "strategy": strategy + '_',
