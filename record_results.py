@@ -43,7 +43,7 @@ def main(args):
     strategy_container = None
     result = None
 
-    test_start_time = time.strftime('%Y-%m-%d-%H-%M-%S')
+
     data = pd.read_pickle('data.pckl')
     table_names = data.columns
     # bp()
@@ -58,6 +58,7 @@ def main(args):
         show_optimum_graph = test_vars.show_optimum_graph
         show_optimum_vs_period_graph = test_vars.show_optimum_vs_period_graph
         save_plots = test_vars.save_plots
+        test_start_time = test_vars.test_start_time
 
     else:
         if args.strategy is not None:
@@ -82,7 +83,7 @@ def main(args):
                 lookback_periods.append(pd.DateOffset(days=int(day)))
         else:
             lookback_periods=[pd.DateOffset(months=6)]
-
+        test_start_time = time.strftime('%Y-%m-%d-%H-%M-%S')
         show_return_graph = True
         show_value_added_graph = True
         show_optimum_graph = False

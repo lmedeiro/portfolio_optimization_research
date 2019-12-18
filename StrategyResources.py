@@ -486,7 +486,7 @@ def show_results(result, covariance_methods, test_container, show_return_graph=T
     index_names = process_plot_label_strings(indexes=indexes_to_show['equity_progression'],
                                              string_container=result.stats.loc['total_return'].index.values)
 
-    result.plot(figsize=(15, 10), logy=True)
+    result.plot(figsize=(15, 10), logy=False)
     plt.legend(index_names)
     axis_fontsize = 20
     title_fontsize = 25
