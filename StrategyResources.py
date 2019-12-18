@@ -17,8 +17,8 @@ cw = os.getcwd()
 # print(cw)
 global OPTIMUM_CONTAINER
 OPTIMUM_CONTAINER = {'date': [], 'value': []}
-ACCEPTED_STRATEGIES = ['gmvp','mdp_original',
-                       'mdp_kappa', 'mdp_D', 'one_over_n']
+ACCEPTED_STRATEGIES = ['GMVP','MDP',
+                       'mdp_kappa', 'MMDP', 'one_over_n']
 
 home_dir = os.path.expandvars("$HOME")                                                                        
 app_src_dir = '/dev/repos/classes/portfolio_research_project/BackTestingSystem'                               
@@ -35,11 +35,11 @@ print(home_dir + app_src_dir)
 
 from BackTestingSystem import bt
 
-def calculate_Sigma(X, method_name='sample'):
+def calculate_Sigma(X, method_name='SCE'):
     sigma = None
-    if method_name == 'sample':
+    if method_name == 'SCE':
         sigma = np.cov(X.values, rowvar=False)
-    elif method_name == 'ledoit-wolf':
+    elif method_name == 'LWE':
         sigma = sk_cov.ledoit_wolf(X.values)[0]
     elif method_name == 'rie' or method_name == 'RIE':
         # bp()
@@ -232,7 +232,7 @@ class WeighOptimization(bt.Algo):
     """
 
     def __init__(self, lookback=pd.DateOffset(months=3),
-                 bounds=(0., 1.), covar_method='ledoit-wolf',
+                 bounds=(0., 1.), covar_method='LWE',
                  rf=0., lag=pd.DateOffset(days=0), optimum_container=None,
                  optimization_method='gmvp', D_N=3):
         super(WeighOptimization, self).__init__()
@@ -263,13 +263,13 @@ class WeighOptimization(bt.Algo):
         if returns.index.size > 1:
             returns = returns.dropna()
             sigma = calculate_Sigma(returns, method_name=self.covar_method)
-            if self.optimization_method == 'gmvp':
+            if self.optimization_method == 'GMVP':
                 raw_weights, optimum = calculate_gmvp(sigma)
-            elif self.optimization_method == 'mdp_original':
+            elif self.optimization_method == 'MDP':
                 raw_weights, optimum = calculate_mdp_original(sigma)
             elif self.optimization_method == 'mdp_kappa':
                 raw_weights, optimum = calculate_mdp_based_on_kappa(sigma)
-            elif self.optimization_method == 'mdp_D':
+            elif self.optimization_method == 'MMDP':
                 raw_weights, optimum = calculate_mdp_based_on_D(sigma, D_N=self.D_N)
             elif self.optimization_method == 'one_over_n':
                 raw_weights, optimum = calculate_one_over_n(sigma)
@@ -323,7 +323,7 @@ def get_available_strategies(lookback, lag, covar_method, strategy_name,
 
 
 def build_test(number_of_assets, data_container,
-               optimum_container=None, covariance_methods=['ledoit-wolf'],
+               optimum_container=None, covariance_methods=['LWE'],
                weight_strategy_names=['gmvp'], commission_functions=[None],
                lookback_periods=[pd.DateOffset(months=6)], lag_times=[pd.DateOffset(months=0)],
                add_random_strategy=False, add_one_over_n_strategy=False, D_N=3,
@@ -351,6 +351,10 @@ def build_test(number_of_assets, data_container,
             del data
         data = data_container[data_container.columns[:asset_count]]
         # bp()
+        # label_dictionary = {"method_name": method_name + '_',
+        #                     "strategy": strategy + '_',
+        #                     "lookback_string": lookback_string + '_',
+        #                     "asset_count": str(asset_count)}
         print("final number of observations: {}".format(data.index.size))
         for method_name in covariance_methods:
             for strategy in weight_strategy_names:
@@ -361,11 +365,12 @@ def build_test(number_of_assets, data_container,
                             lookback_string = str.split(lookback_string)[1] # Assume the space, and separation by space.
                             lookback_string = str.replace(lookback_string, '<', '')
                             lookback_string = str.replace(lookback_string, '>', '')
+                            label_details = method_name + '_'\
+                                            + strategy + '_'\
+                                            + lookback_string + '_'\
+                                            + str(asset_count) + ' assets'
                             strategy_container.append(
-                                bt.Strategy(method_name + '_'
-                                            + strategy + '_'
-                                            + lookback_string + '_'
-                                            + str(asset_count),
+                                bt.Strategy(label_details,
                                             [
                                                 bt.algos.RunMonthly(),
                                                 bt.algos.SelectAll(),
@@ -400,7 +405,7 @@ def build_test(number_of_assets, data_container,
     return strategy_container, test_container
 
 
-def value_added_plot(result, covariance_methods):
+def value_added_plot(result, covariance_methods, indexes_to_show):
     value_added = []
     number_of_covar_methods = len(covariance_methods)
     index = 0
@@ -414,13 +419,15 @@ def value_added_plot(result, covariance_methods):
     plt.figure(figsize=(15, 5))
     axis_fontsize = 15
     title_fontsize = 20
-    plt.xticks(rotation='vertical', fontsize=axis_fontsize)
+    plt.xticks(rotation=0, fontsize=axis_fontsize)
     plt.yticks(fontsize=axis_fontsize)
     plt.xlabel('Test Name', fontsize=axis_fontsize)
     plt.ylabel('Value Added', fontsize=axis_fontsize)
     plt.title('Added Value vs Test Name', fontsize=title_fontsize)
     plt.grid()
-    plt.bar(result.stats.loc['total_return'].index.values, value_added)
+    index_names = process_plot_label_strings(indexes=indexes_to_show,
+                                             string_container=result.stats.loc['total_return'].index.values)
+    plt.bar(index_names, value_added)
     result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
     plt.savefig(fname='images/value_added_plot' + result_time + '.pdf', 
                 format='pdf', 
@@ -430,17 +437,31 @@ def value_added_plot(result, covariance_methods):
     return 0
 
 
-def value_return_plot(result):
+def process_plot_label_strings(indexes, string_container):
+    new_strings = []
+    # bp()
+    for item in string_container:
+        data = np.array(item.split('_'))
+        new_string = ''
+        for s in data[indexes]:
+            new_string += s + ' '
+        new_strings.append(new_string)
+    return new_strings
+
+
+def value_return_plot(result, indexes_to_show):
     plt.figure(figsize=(15, 5))
     axis_fontsize = 15
     title_fontsize = 20
-    plt.xticks(rotation='vertical', fontsize=axis_fontsize)
+    plt.xticks(rotation=0, fontsize=axis_fontsize)
     plt.yticks(fontsize=axis_fontsize)
     plt.xlabel('Test Name', fontsize=axis_fontsize)
     plt.ylabel('Return value', fontsize=axis_fontsize)
     plt.title('Return vs Test Name', fontsize=title_fontsize)
     plt.grid()
-    plt.bar(result.stats.loc['total_return'].index.values, result.stats.loc['total_return'])
+    index_names = process_plot_label_strings(indexes=indexes_to_show,
+                                             string_container=result.stats.loc['total_return'].index.values)
+    plt.bar(index_names, result.stats.loc['total_return'])
     result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
     plt.savefig(fname='images/value_return_plot' + result_time + '.pdf', 
                 format='pdf', 
@@ -452,24 +473,43 @@ def value_return_plot(result):
 
 def show_results(result, covariance_methods, test_container, show_return_graph=True,
                  show_value_added_graph=True, show_optimum_graph=True,
-                 show_optimum_vs_period_graph=False):
-    # bp()
-    plt.figure()
-    result.plot(figsize=(15, 10), logy=True)
-    result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
-    plt.savefig(fname='images/equity_result_plot' + result_time + '.pdf', 
-                format='pdf', 
-                dpi=300,
-                bbox_inches='tight')
-    pickle.dump(result, 
-                open('data/result_' + result_time + '.pckl', 'wb'))
+                 show_optimum_vs_period_graph=False, save_plots=True, indexes_to_show=None):
+    if indexes_to_show is None:
+        indexes_to_show = {'value_added': [0, 3],
+                           'equity_progression': [0, 3],
+                           'optimum_graph': [0, 2],
+                           'period_graph': [0, 3],
+                           'return_graph': [0, 3]}
+    index_names = process_plot_label_strings(indexes=indexes_to_show['equity_progression'],
+                                             string_container=result.stats.loc['total_return'].index.values)
 
+    result.plot(figsize=(15, 10), logy=True)
+    plt.legend(index_names)
+    axis_fontsize = 20
+    title_fontsize = 25
+    plt.xticks(fontsize=axis_fontsize)
+    plt.yticks(fontsize=axis_fontsize)
+    plt.grid()
+    plt.xlabel('Dates', fontsize=axis_fontsize)
+    plt.ylabel('Percentage Returns', fontsize=axis_fontsize)
+    plt.title('Equity Progression', fontsize=title_fontsize)
+    result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
+    if save_plots:
+        plt.savefig(fname='images/equity_result_plot' + result_time + '.pdf',
+                    format='pdf',
+                    dpi=300,
+                    bbox_inches='tight')
+        pickle.dump(result,
+                    open('data/result_' + result_time + '.pckl', 'wb'))
+    else:
+        plt.show()
+    # bp()
     if show_return_graph:
-        value_return_plot(result)
+        value_return_plot(result, indexes_to_show['return_graph'])
     if show_value_added_graph:
-        value_added_plot(result, covariance_methods)
+        value_added_plot(result, covariance_methods, indexes_to_show['value_added'])
     if show_optimum_graph or show_optimum_vs_period_graph:
-        sorted_df = get_sorted_optimum_data(test_container)
+        sorted_df = get_sorted_optimum_data(test_container, indexes_to_show['optimum_graph'])
     if show_optimum_graph:
         show_optimum_plot(sorted_df, test_container)
     if show_optimum_vs_period_graph:
@@ -477,7 +517,7 @@ def show_results(result, covariance_methods, test_container, show_return_graph=T
     return 0
 
 
-def get_sorted_optimum_data(test_container):
+def get_sorted_optimum_data(test_container, indexes_to_show):
     optimum_container = pd.DataFrame(columns=OPTIMUM_CONTAINER.keys())
 
     optimum_container['date'] = OPTIMUM_CONTAINER['date']
@@ -489,6 +529,9 @@ def get_sorted_optimum_data(test_container):
     for test_index, test in enumerate(test_container):
         row_index = test_index
         while row_index < sorted_df.index.size:
+            # bp()
+            short_test_name = process_plot_label_strings(indexes_to_show, [test.name])
+            sorted_df.loc[row_index, 'short_test_name'] = short_test_name[0]
             sorted_df.loc[row_index, 'test_name'] = test.name
             row_index += len(test_container)
     return sorted_df
@@ -509,11 +552,13 @@ def show_optimum_plot(sorted_df, test_container):
         t = data['date'].values.ravel()
         x = data['value'].values.ravel()
         d = 0
+        # bp()
         for d in x[0].shape:
             d += 1
         if d > 1:
             x = np.hstack(x)[0]
-        plt.bar(np.arange(len(t)), x, alpha=alpha,label=test.name,)
+        plt.bar(np.arange(len(t)), x, alpha=alpha,
+                label=sorted_df[sorted_df['test_name'] == test.name]['short_test_name'].values[0],)
     # bp()
     plt.legend(fontsize=axis_fontsize)
     result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
@@ -524,8 +569,8 @@ def show_optimum_plot(sorted_df, test_container):
 
 
 def show_optimum_vs_period_plot(sorted_df, test_container):
-    mean_optima_df = pd.DataFrame(columns=['test_name', 'values'])
-    plt.figure(figsize=(30, 10))
+    mean_optima_df = pd.DataFrame(columns=['test_name', 'short_test_name', 'values'])
+    # plt.figure(figsize=(30, 10))
     axis_fontsize = 20
     title_fontsize = 25
     plt.xticks(fontsize=axis_fontsize)
@@ -539,29 +584,33 @@ def show_optimum_vs_period_plot(sorted_df, test_container):
             d += 1
         if d > 1:
             x = np.hstack(x)[0]
-        plt.hist(x, bins=50, density=True, label=test.name, alpha=0.50)
-        mean_optima_df.loc[mean_optima_df.index.size] = [test.name, np.mean(x)]
-
+        short_test_name = sorted_df[sorted_df['test_name'] == test.name]['short_test_name'].values[0]
+        # plt.hist(x, bins=50, density=True,
+        #          label=short_test_name,
+        #          alpha=0.50)
+        mean_optima_df.loc[mean_optima_df.index.size] = [test.name, short_test_name, x]
+    # TODO: Take more statistics, so to build a more complete graph, as described in the desired changes
+    # TODO: Fix problem with plotting.
     # bp()
-    plt.legend()
-    plt.show()
+    # plt.legend()
+    # plt.show()
     plt.figure(figsize=(30, 10))
     axis_fontsize = 20
     title_fontsize = 25
-    plt.xticks(rotation='vertical', fontsize=axis_fontsize)
+    plt.xticks(rotation=0, fontsize=axis_fontsize)
     plt.yticks(fontsize=axis_fontsize)
     plt.grid()
     plt.xlabel('Test Name', fontsize=axis_fontsize)
-    plt.ylabel('Average Optimum', fontsize=axis_fontsize)
-    plt.title('Average Optimum vs Test Name', fontsize=title_fontsize)
-
-    plt.plot(mean_optima_df['test_name'].values, mean_optima_df['values'].values, '-o')
-    # plt.legend(fontsize=axis_fontsize)
+    plt.ylabel('Optimum Values', fontsize=axis_fontsize)
+    plt.title('Optimum Statistics vs Test Name', fontsize=title_fontsize)
+    # bp()
+    plt.boxplot(mean_optima_df['values'].values, vert=True, patch_artist=True, notch=True,
+                labels=mean_optima_df['short_test_name'].values)
     result_time = time.strftime('%Y-%m-%d-%H-%M-%S')
     plt.savefig(fname='images/optimum_vs_period_plot' + result_time + '.pdf', 
                 format='pdf', 
                 dpi=300, bbox_inches='tight')
-    plt.show()
+    # plt.show()
     mean_optima_df.to_pickle('data/' + 'mean_optima_df' + '_' + result_time + '.pckl')
 
 
