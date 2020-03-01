@@ -1,7 +1,9 @@
 import pandas as pd
+import time
 
-# weight_strategy_names = None
-weight_strategy_names = ['MMDP']
+test_name = '_GMVP_'
+test_start_time = test_name + time.strftime('%Y-%m-%d-%H-%M-%S')
+weight_strategy_names = ['GMVP']
 
 covariance_methods = ['SCE', 'LWE']
 
@@ -21,6 +23,6 @@ indexes_to_show = {'value_added': [0, 3],
 
 show_return_graph=True
 show_value_added_graph=True
-show_optimum_graph=False
+show_optimum_graph=True
 show_optimum_vs_period_graph=True
 save_plots=True
