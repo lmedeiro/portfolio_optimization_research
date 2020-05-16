@@ -98,7 +98,12 @@ def calculate_mdp_original(sigma):
     A = np.linalg.lstsq(sigma, volatilities, rcond=None)[0]
     B = np.ones([N, 1]).T @ A
     M = A / B
+    for index, item in enumerate(M):
+        M[index] = np.max([0, item])
     M = M.reshape([N, 1])
+    sum_of_weights = np.sum(M)
+    kappa = np.max([sum_of_weights, 0.001])
+    M = M / kappa
     D = (M.T @ volatilities) / np.sqrt(M.T @ sigma @ M)
     return M, D
 
