@@ -17,8 +17,7 @@ cw = os.getcwd()
 # print(cw)
 global OPTIMUM_CONTAINER
 OPTIMUM_CONTAINER = {'date': [], 'value': []}
-ACCEPTED_STRATEGIES = ['GMVP','MDP',
-                       'mdp_kappa', 'MMDP', 'one_over_n']
+ACCEPTED_STRATEGIES = ['GMVP', 'MDP', 'mdp_kappa', 'MMDP', 'MMDPD', 'one_over_n']
 
 home_dir = os.path.expandvars("$HOME")                                                                        
 app_src_dir = '/dev/repos/classes/portfolio_research_project/BackTestingSystem'                               
@@ -36,25 +35,27 @@ print(home_dir + app_src_dir)
 from BackTestingSystem import bt
 
 def calculate_Sigma(X, method_name='SCE'):
+    if "pandas" in str(type(X)):
+        X = X.values
     sigma = None
     if method_name == 'SCE':
-        sigma = np.cov(X.values, rowvar=False)
+        sigma = np.cov(X, rowvar=False)
     elif method_name == 'LWE':
-        sigma = sk_cov.ledoit_wolf(X.values)[0]
+        sigma = sk_cov.ledoit_wolf(X)[0]
     elif method_name == 'rie' or method_name == 'RIE':
         # bp()
-        if X.values.shape[0] <= X.values.shape[1]:
-            # sigma = sk_cov.ledoit_wolf(X.values)[0]
-            sigma = np.cov(X.values, rowvar=False)
+        if X.shape[0] <= X.shape[1]:
+            # sigma = sk_cov.ledoit_wolf(X)[0]
+            sigma = np.cov(X, rowvar=False)
         else:
-            sigma = rmt.optimalShrinkage(X.values, return_covariance=True)
+            sigma = rmt.optimalShrinkage(X, return_covariance=True)
 
     elif method_name == 'clipped':
-        if X.values.shape[0] <= X.values.shape[1]:
-            sigma = sk_cov.ledoit_wolf(X.values)[0]
-            # sigma = rmt.optimalShrinkage(X.values, return_covariance=True)
+        if X.shape[0] <= X.shape[1]:
+            sigma = sk_cov.ledoit_wolf(X)[0]
+            # sigma = rmt.optimalShrinkage(X, return_covariance=True)
         else:
-            sigma = rmt.clipped(X.values, return_covariance=True)
+            sigma = rmt.clipped(X, return_covariance=True)
     else:
         raise Exception('Error occurred with method name: {}'.format(method_name))
 
@@ -163,6 +164,8 @@ def calculate_mdp_based_on_D(sigma, D_N=3):
     """
     N = sigma.shape[0]
     # bp()
+    # TODO: Investigate the new form of this, with D being computed by the mdp_original algorithm
+    # TODO: Clean this function to better reflect the definition we are posing.
     volatilities = np.sqrt(np.diag(sigma))
     volatilities = volatilities.reshape(volatilities.shape[0], 1)
     w_N = np.ones([N, 1]) * 1 / N
@@ -172,7 +175,7 @@ def calculate_mdp_based_on_D(sigma, D_N=3):
         # D_N = 3
     R_N = V_N**2 / D_N**2
     x = cp.Variable(shape=(N,1))
-    V = x.T @ volatilities # cp.quad_form(x, sigma)
+    V = x.T @ volatilities #  / cp.quad_form(x, sigma)
     constraints = [x >= np.ones([N,1]) * 0,
                    np.ones([N,1]).T @ x == 1,
                    cp.quad_form(x, sigma) <= R_N,
@@ -192,6 +195,33 @@ def calculate_mdp_based_on_D(sigma, D_N=3):
         # print('computer 1/n instead of mdp_new')
         x = w_N
         D = V_N / np.sqrt(x.T @ sigma @ x)
+    return x, D
+
+def calculate_mmdp_based_mdp(sigma, c=0.5):
+    """
+    Maximum Diversified Portfolio based on a given D_N. If D_N is not given, it will be based
+    on a factor of the diversified ratio of the 1/N portfolio strategy.
+    :param sigma: covariance matrix
+    :param min_gmvp_point: paramter that stipulates what is the minimum gmpv point at which
+    to place as constraint in the QCP
+    :return: x: weghts for assets, D: diversification ratio
+    """
+    N = sigma.shape[0]
+    variance = np.diag(sigma)
+    volatilities = np.sqrt(variance)
+    volatilities = volatilities.reshape(volatilities.shape[0], 1)
+    x = cp.Variable(shape=(N,1))
+    V = x.T @ volatilities
+    constraints = [x >= np.ones([N,1]) * 0,
+                   np.ones([N,1]).T @ x == 1,
+                   cp.quad_form(x, sigma) <= (c * np.sum(variance)) ** 2,
+                   ]
+    problem = cp.Problem(cp.Maximize(V),
+                         constraints)
+    optimum = problem.solve(qcp=True)
+    x = np.array(x.value, dtype=float)
+    D = V.value / np.sqrt(x.T @ sigma @ x)
+
     return x, D
 
 
@@ -239,7 +269,7 @@ class WeighOptimization(bt.Algo):
     def __init__(self, lookback=pd.DateOffset(months=3),
                  bounds=(0., 1.), covar_method='LWE',
                  rf=0., lag=pd.DateOffset(days=0), optimum_container=None,
-                 optimization_method='gmvp', D_N=3):
+                 optimization_method='gmvp', D_N=3, mmdp_c=0.50):
         super(WeighOptimization, self).__init__()
         self.lookback = lookback
         self.lag = lag
@@ -249,6 +279,7 @@ class WeighOptimization(bt.Algo):
         self.optimum_container = optimum_container
         self.rf = rf
         self.D_N = D_N
+        self.mmdp_c = mmdp_c
 
     def __call__(self, target):
         selected = target.temp['selected']
@@ -275,6 +306,9 @@ class WeighOptimization(bt.Algo):
             elif self.optimization_method == 'mdp_kappa':
                 raw_weights, optimum = calculate_mdp_based_on_kappa(sigma)
             elif self.optimization_method == 'MMDP':
+                # raw_weights, optimum = calculate_mdp_based_on_D(sigma, D_N=self.D_N)
+                raw_weights, optimum = calculate_mmdp_based_mdp(sigma, c=self.mmdp_c)
+            elif self.optimization_method == 'MMDPD':
                 raw_weights, optimum = calculate_mdp_based_on_D(sigma, D_N=self.D_N)
             elif self.optimization_method == 'one_over_n':
                 raw_weights, optimum = calculate_one_over_n(sigma)
@@ -303,7 +337,7 @@ class WeighOptimization(bt.Algo):
 
 
 def get_available_strategies(lookback, lag, covar_method, strategy_name,
-                             optimum_container=None, D_N=3):
+                             optimum_container=None, D_N=3, mmdp_c=0.50):
     """
     Helper function to build test. This function helps include test strategies for
     every parameter passed.
@@ -320,7 +354,7 @@ def get_available_strategies(lookback, lag, covar_method, strategy_name,
                                  covar_method=covar_method,
                                  optimization_method=strategy_name,
                                  optimum_container=optimum_container,
-                                 D_N=D_N)
+                                 D_N=D_N, mmdp_c=mmdp_c)
     elif strategy_name == 'random':
         return bt.algos.WeighRandomly()
     else:
@@ -332,6 +366,7 @@ def build_test(number_of_assets, data_container,
                weight_strategy_names=['gmvp'], commission_functions=[None],
                lookback_periods=[pd.DateOffset(months=6)], lag_times=[pd.DateOffset(months=0)],
                add_random_strategy=False, add_one_over_n_strategy=False, D_N=3,
+               mmdp_c=0.5,
                ):
     """
     Function that helps build tests. Given a certain set of parameters, a strategy container and test
@@ -345,6 +380,8 @@ def build_test(number_of_assets, data_container,
     :param lag_times:
     :param add_random_strategy:
     :param add_one_over_n_strategy:
+    :param mmdp_c: parameter dictating risk aversion
+    :param D_N: parameter related to portfolio diversification ratio
     :return:
     """
     strategy_container = []
@@ -356,7 +393,8 @@ def build_test(number_of_assets, data_container,
     for asset_count in number_of_assets:
         if data is not None:
             del data
-        data = data_container[data_container.columns[permutation[:asset_count]]]
+        # data = data_container[data_container.columns[permutation[:asset_count]]]
+        data = data_container[data_container.columns[:asset_count]]
         # bp()
         # label_dictionary = {"method_name": method_name + '_',
         #                     "strategy": strategy + '_',
@@ -386,7 +424,8 @@ def build_test(number_of_assets, data_container,
                                                                          covar_method=method_name,
                                                                          strategy_name=strategy,
                                                                          optimum_container=optimum_container,
-                                                                         D_N=D_N),
+                                                                         D_N=D_N,
+                                                                         mmdp_c=mmdp_c),
                                                 bt.algos.Rebalance()]))
                             test_container.append(bt.Backtest(strategy_container[j], data, commissions=commission_func))
                             j += 1
@@ -507,8 +546,8 @@ def show_results(result, covariance_methods, test_container, show_return_graph=T
                     format='pdf',
                     dpi=300,
                     bbox_inches='tight')
-        pickle.dump(result,
-                    open('data/result_' + result_time + '.pckl', 'wb'))
+        # pickle.dump(result,
+        #             open('data/result_' + result_time + '.pckl', 'wb'))
     else:
         plt.show()
     # bp()
@@ -619,7 +658,7 @@ def show_optimum_vs_period_plot(sorted_df, test_container, test_start_time):
                 format='pdf', 
                 dpi=300, bbox_inches='tight')
     # plt.show()
-    mean_optima_df.to_pickle('data/' + 'mean_optima_df' + '_' + result_time + '.pckl')
+    # mean_optima_df.to_pickle('data/' + 'mean_optima_df' + '_' + result_time + '.pckl')
 
 
 if __name__ == "__main__":

@@ -117,6 +117,7 @@ def main(args):
                                                               commission_functions=commission_functions,
                                                               lookback_periods=lookback_periods, lag_times=lag_times,
                                                               add_random_strategy=False, add_one_over_n_strategy=False,
+                                                              mmdp_c=0.2
                                                               )
     if result:
         del result
