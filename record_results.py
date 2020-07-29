@@ -59,6 +59,9 @@ def main(args):
         show_optimum_vs_period_graph = test_vars.show_optimum_vs_period_graph
         save_plots = test_vars.save_plots
         test_start_time = test_vars.test_start_time
+        mmdp_c = test_vars.mmdp_c
+        data_metric_key = test_vars.data_metric_key
+        show_weights_plot = test_vars.show_weights_plot
 
     else:
         if args.strategy is not None:
@@ -84,10 +87,13 @@ def main(args):
         else:
             lookback_periods=[pd.DateOffset(months=6)]
         test_start_time = time.strftime('%Y-%m-%d-%H-%M-%S')
+        mmdp_c = [0.90]
+        data_metric_key = ['risk']
         show_return_graph = True
         show_value_added_graph = True
         show_optimum_graph = False
         show_optimum_vs_period_graph = True
+        show_weights_plot = True
         save_plots = True
         # 0: method_name
         # 1: strategy
@@ -105,11 +111,13 @@ def main(args):
     #commission_fn_a = lambda q, p: q * p * 0.002
     # bp()
     commission_functions = [None]
-    strat_res.OPTIMUM_CONTAINER = {'date': [], 'value': []}
+    strat_res.DATA_CONTAINER = {}
     if test_container:
         del test_container
     if strategy_container:
         del strategy_container
+    #TODO: Have c as a parameter, so to vary and investigate how it impacts returns over time.
+    # So, we would have something like MMDP-0.5, MMDP-0.90, MMDP-1.1, for example.
     strategy_container, test_container = strat_res.build_test(number_of_assets,
                                                               data,
                                                               covariance_methods=covariance_methods,
@@ -117,7 +125,7 @@ def main(args):
                                                               commission_functions=commission_functions,
                                                               lookback_periods=lookback_periods, lag_times=lag_times,
                                                               add_random_strategy=False, add_one_over_n_strategy=False,
-                                                              mmdp_c=0.2
+                                                              mmdp_c=mmdp_c
                                                               )
     if result:
         del result
@@ -127,9 +135,11 @@ def main(args):
                            show_value_added_graph=show_value_added_graph,
                            show_optimum_graph=show_optimum_graph,
                            show_optimum_vs_period_graph=show_optimum_vs_period_graph,
+                           show_weights_plot=show_weights_plot,
                            save_plots=save_plots,
                            indexes_to_show=indexes_to_show,
-                           test_start_time=test_start_time)
+                           test_start_time=test_start_time,
+                           data_metric_key=data_metric_key)
 
 
 # Entry point of the script
