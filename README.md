@@ -1,9 +1,10 @@
 # Repo Description
 
 This repo pertains to the work developed for a portfolio optimization 
-research project at Aalto University. Main author is Luiz Fernando Medeiros, in collaboration with Professor
-Esa Ollila. An initial version of the research details and results may be found in 
-the [following link](./report/LFM_estimator_research_project.pdf). 
+research project. Authors are: Luiz Fernando Medeiros (Maasalo-Medeiros Oy)
+ and Professor Esa Ollila (Aalto University). An initial version of 
+ the research details and results may be found in the
+  [following link](./report/LFM_estimator_research_project.pdf). 
 
 # Research Abstract
 
